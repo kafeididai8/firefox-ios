@@ -53,7 +53,6 @@ class CompactModeUITests: BaseTestCase {
         app.buttons["Go"].tap()
     }
     
-    
     func testCompactModeUI() {
         //Dsimiss intro screen
         dismissFirstRunUI()
