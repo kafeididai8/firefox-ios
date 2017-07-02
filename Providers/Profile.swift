@@ -154,7 +154,7 @@ protocol Profile: class {
 
     func sendItems(_ items: [ShareItem], toClients clients: [RemoteClient]) -> Deferred<Maybe<SyncStatus>>
 
-    var syncManager: SyncManager { get }
+    var syncManager: SyncManager! { get }
     var isChinaEdition: Bool { get }
 }
 
@@ -182,7 +182,8 @@ open class BrowserProfile: Profile {
     weak fileprivate var app: UIApplication?
 
     let db: BrowserDB
-    let loginsDB: BrowserDB?
+    let loginsDB: BrowserDB
+    var syncManager: SyncManager!
 
     private static var loginsKey: String? {
         let key = "sqlcipher.key.logins.db"
@@ -234,14 +235,23 @@ open class BrowserProfile: Profile {
         // since the DB handles will create new DBs under the new profile folder.
         let isNewProfile = !files.exists("")
 
-        // Setup our database handles
+        // Set up our database handles.
 
-        // We almost certainly don't want to be accessing the logins.db when in an extension, so let's avoid
-        // corrupting it by not opening it at all.
-        self.loginsDB = syncDelegate != nil ? BrowserDB(filename: "logins.db", secretKey: BrowserProfile.loginsKey, files: files) : nil
+        self.loginsDB = BrowserDB(filename: "logins.db", secretKey: BrowserProfile.loginsKey, files: files, leaveClosed: true)
+        self.db = BrowserDB(filename: "browser.db", files: files, leaveClosed: true)
 
-        self.db = BrowserDB(filename: "browser.db", files: files)
+        // This has to happen prior to the databases being opened, because opening them can trigger
+        // events to which the SyncManager listens.
+        self.syncManager = BrowserSyncManager(profile: self)
+
+        self.db.firstOpen()
         self.db.attachDB(filename: "metadata.db", as: AttachedDatabaseMetadata)
+
+        if syncDelegate != nil {
+            // We almost certainly don't want to be accessing the logins.db when in an extension, so let's avoid
+            // corrupting it by not opening it at all.
+            self.loginsDB.firstOpen()
+        }
 
         let notificationCenter = NotificationCenter.default
 
@@ -286,7 +296,7 @@ open class BrowserProfile: Profile {
         isShutdown = false
         
         db.reopenIfClosed()
-        loginsDB?.reopenIfClosed()
+        loginsDB.reopenIfClosed()
     }
 
     func shutdown() {
@@ -294,7 +304,7 @@ open class BrowserProfile: Profile {
         isShutdown = true
 
         db.forceClose()
-        loginsDB?.forceClose()
+        loginsDB.forceClose()
     }
 
     @objc
@@ -431,10 +441,6 @@ open class BrowserProfile: Profile {
         return SQLiteRemoteClientsAndTabs(db: self.db)
     }()
 
-    lazy var syncManager: SyncManager = {
-        return BrowserSyncManager(profile: self)
-    }()
-
     lazy var certStore: CertStore = {
         return CertStore()
     }()
@@ -474,7 +480,7 @@ open class BrowserProfile: Profile {
     }
 
     lazy var logins: BrowserLogins & SyncableLogins & ResettableSyncStorage = {
-        return SQLiteLogins(db: self.loginsDB!)
+        return SQLiteLogins(db: self.loginsDB)
     }()
 
     lazy var isChinaEdition: Bool = {

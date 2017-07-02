@@ -77,7 +77,7 @@ open class BrowserDB {
     // appear in a query string.
     open static let MaxVariableNumber = 999
 
-    public init(filename: String, secretKey: String? = nil, files: FileAccessor) {
+    public init(filename: String, secretKey: String? = nil, files: FileAccessor, leaveClosed: Bool = false) {
         log.debug("Initializing BrowserDB: \(filename).")
         self.files = files
         self.filename = filename
@@ -92,6 +92,13 @@ open class BrowserDB {
             log.debug("Creating db: \(file) with secret = \(secretKey!)")
         }
 
+        if !leaveClosed {
+            self.firstOpen()
+        }
+    }
+
+    // Do the same work that we normally do at the end of init.
+    public func firstOpen() {
         // Create or update will also delete and create the database if our key was incorrect.
         switch self.createOrUpdate(self.schemaTable) {
         case .failure:
@@ -101,7 +108,7 @@ open class BrowserDB {
             log.info("Database not created as the SQLiteConnection is closed.")
             SentryIntegration.shared.send(message: "Database not created as the SQLiteConnection is closed.", tag: "BrowserDB", severity: .info)
         case .success:
-            log.debug("db: \(file) has been created")
+            log.debug("db: \(self.filename) has been created")
         }
     }
 
