@@ -363,11 +363,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UIViewControllerRestorati
             return false
         }
 
-        guard let host = url.host else {
-            log.warning("Cannot handle nil URL host")
-            return false
-        }
-
+        let host = url.host ?? "open-url"
         let query = url.getQuery()
 
         switch host {
