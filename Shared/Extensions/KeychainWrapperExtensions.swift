@@ -18,7 +18,7 @@ public extension KeychainWrapper {
 }
 
 public extension KeychainWrapper {
-    func ensureItemAccessibility(_ accessibility: SwiftKeychainWrapper.KeychainItemAccessibility, forKey key: String) {
+    func ensureStringItemAccessibility(_ accessibility: SwiftKeychainWrapper.KeychainItemAccessibility, forKey key: String) {
         if self.hasValue(forKey: key) {
             if self.accessibilityOfKey(key) != .afterFirstUnlock {
                 log.debug("updating item \(key) with \(accessibility)")
@@ -28,9 +28,30 @@ public extension KeychainWrapper {
                     return
                 }
 
-                if !self.removeObject(forKey: key) {
-                    log.warning("failed to remove item \(key)")
+//                if !self.removeObject(forKey: key) {
+//                    log.warning("failed to remove item \(key)")
+//                }
+
+                if !self.set(value, forKey: key, withAccessibility: accessibility) {
+                    log.warning("failed to update item \(key)")
                 }
+            }
+        }
+    }
+
+    func ensureObjectItemAccessibility(_ accessibility: SwiftKeychainWrapper.KeychainItemAccessibility, forKey key: String) {
+        if self.hasValue(forKey: key) {
+            if self.accessibilityOfKey(key) != .afterFirstUnlock {
+                log.debug("updating item \(key) with \(accessibility)")
+
+                guard let value = self.object(forKey: key) else {
+                    log.error("failed to get item \(key)")
+                    return
+                }
+
+//                if !self.removeObject(forKey: key) {
+//                    log.warning("failed to remove item \(key)")
+//                }
 
                 if !self.set(value, forKey: key, withAccessibility: accessibility) {
                     log.warning("failed to update item \(key)")

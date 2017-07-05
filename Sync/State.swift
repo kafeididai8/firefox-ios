@@ -445,7 +445,7 @@ open class Scratchpad {
             b.keyLabel = keyLabel
             if let ckTS = prefs.unsignedLongForKey(PrefKeysTS) {
                 let key = "keys." + keyLabel
-                KeychainWrapper.sharedAppContainerKeychain.ensureItemAccessibility(.afterFirstUnlock, forKey: key)
+                KeychainWrapper.sharedAppContainerKeychain.ensureStringItemAccessibility(.afterFirstUnlock, forKey: key)
                 if let keys = KeychainWrapper.sharedAppContainerKeychain.string(forKey: key) {
                     // We serialize as JSON.
                     let keys = Keys(payload: KeysPayload(keys))

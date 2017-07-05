@@ -187,7 +187,7 @@ open class BrowserProfile: Profile {
     private static var loginsKey: String? {
         let key = "sqlcipher.key.logins.db"
         let keychain = KeychainWrapper.sharedAppContainerKeychain
-        keychain.ensureItemAccessibility(.afterFirstUnlock, forKey: key)
+        keychain.ensureStringItemAccessibility(.afterFirstUnlock, forKey: key)
         if keychain.hasValue(forKey: key) {
             return keychain.string(forKey: key)
         }
@@ -494,7 +494,7 @@ open class BrowserProfile: Profile {
 
     fileprivate lazy var account: FirefoxAccount? = {
         let key = self.name + ".account"
-        self.keychain.ensureItemAccessibility(.afterFirstUnlock, forKey: key)
+        self.keychain.ensureObjectItemAccessibility(.afterFirstUnlock, forKey: key)
         if let dictionary = self.keychain.object(forKey: key) as? [String: AnyObject] {
             return FirefoxAccount.fromDictionary(dictionary)
         }
